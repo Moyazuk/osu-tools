@@ -1,14 +1,18 @@
-﻿// Copyright (c) ppy Pty Ltd <contact@ppy.sh>. Licensed under the MIT Licence.
-// See the LICENCE file in the repository root for full licence text.
-
-namespace PerformanceCalculatorGUI.Components
+﻿namespace PerformanceCalculatorGUI.Components
 {
     public enum ProfileSortCriteria
     {
+        Aim,
+        AimControl,
+        Precision,
+        Speed,
+        Stamina,
+        Accuracy,
+        Cognition,
         Live,
         Difference,
         Percentage,
-        Local
+        Local,
     }
 
     public enum CollectionSortCriteria
@@ -17,6 +21,15 @@ namespace PerformanceCalculatorGUI.Components
         Index,
         Difference,
         Percentage,
-        Local
+        Local,
+
+        // NEW: same set for collections if you want them
+        Aim,
+        AimControl,
+        Precision,
+        Speed,
+        Stamina,
+        Accuracy,
+        Cognition,
     }
 }

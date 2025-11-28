@@ -11,6 +11,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Online.API.Requests.Responses;
 using osu.Game.Rulesets;
 using osu.Game.Rulesets.Difficulty;
+using osu.Game.Rulesets.Osu.Difficulty;
 using osu.Game.Scoring;
 
 namespace PerformanceCalculatorGUI.Components.Scores
@@ -31,6 +32,21 @@ namespace PerformanceCalculatorGUI.Components.Scores
         {
             LivePP = livePP;
         }
+
+        private OsuPerformanceAttributes? OsuPerf => PerformanceAttributes as OsuPerformanceAttributes;
+
+        public double AimPP => OsuPerf?.Aim ?? 0;
+
+        public double AimControlPP => OsuPerf?.AimControl ?? 0;
+
+        public double PrecisionPP => OsuPerf?.Precision ?? 0;
+        public double SpeedPP => OsuPerf?.Speed ?? 0;
+
+        public double StaminaPP => OsuPerf?.Stamina ?? 0;
+
+        public double AccPP => OsuPerf?.Accuracy ?? 0;
+        public double ReadingPP => OsuPerf?.Reading ?? 0;
+        public double FlashlightPP => OsuPerf?.Flashlight ?? 0;
     }
 
     public partial class DrawableExtendedProfileScore : DrawableProfileScore
@@ -52,6 +68,38 @@ namespace PerformanceCalculatorGUI.Components.Scores
 
             Score.Position.UnbindEvents();
             Score.PositionChange.BindValueChanged(v => { PositionText.Text = $"{v.NewValue:+0;-0;-}"; });
+        }
+
+        private Drawable createPpColumn(string label, double value, out OsuSpriteText valueText)
+        {
+            valueText = new OsuSpriteText
+            {
+                Font = OsuFont.GetFont(weight: FontWeight.Bold),
+                Text = $"{value:0}pp",
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.TopCentre
+            };
+
+            return new FillFlowContainer
+            {
+                Anchor = Anchor.CentreRight,
+                Origin = Anchor.CentreRight,
+                Width = 60,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Spacing = new osuTK.Vector2(0, 2),
+                Children = new Drawable[]
+                {
+                    valueText,
+                    new OsuSpriteText
+                    {
+                        Font = OsuFont.GetFont(size: SMALL_TEXT_FONT_SIZE),
+                        Text = label,
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre
+                    }
+                }
+            };
         }
 
 
@@ -100,34 +148,32 @@ namespace PerformanceCalculatorGUI.Components.Scores
 
         protected override Drawable[] CreateRightInfoContainerContent(RulesetStore rulesets)
         {
+            // live pp column (we keep a reference to update it)
+            Drawable liveColumn = createPpColumn("live", Score.LivePP ?? 0, out livePpDisplay);
+
+            // component pp columns (don’t need references; they’re static per score)
+            Drawable aimColumn = createPpColumn("Aim", Score.AimPP, out _);
+            Drawable aimControlColumn = createPpColumn("Ctrl", Score.AimControlPP, out _);
+            Drawable precisionColumn = createPpColumn("Prec", Score.PrecisionPP, out _);
+            Drawable speedColumn = createPpColumn("Spd", Score.SpeedPP, out _);
+            Drawable staminaColumn = createPpColumn("Stam", Score.StaminaPP, out _);
+            Drawable accColumn = createPpColumn("Acc", Score.AccPP, out _);
+            Drawable cognitionColumn = createPpColumn("Cog", Score.FlashlightPP + Score.ReadingPP, out _);
+
+            // base columns (accuracy/combo, mods icons) come after our pp columns
             return new Drawable[]
-            {
-                new FillFlowContainer
-                {
-                    Anchor = Anchor.CentreRight,
-                    Origin = Anchor.CentreRight,
-                    Width = 60,
-                    AutoSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Children = new Drawable[]
-                    {
-                        new Container
-                        {
-                            AutoSizeAxes = Axes.Y,
-                            Child = livePpDisplay = new OsuSpriteText
-                            {
-                                Font = OsuFont.GetFont(weight: FontWeight.Bold),
-                                Text = $"{Score.LivePP:0}pp"
-                            },
-                        },
-                        new OsuSpriteText
-                        {
-                            Font = OsuFont.GetFont(size: SMALL_TEXT_FONT_SIZE),
-                            Text = "live"
-                        }
-                    }
-                }
-            }.Concat(base.CreateRightInfoContainerContent(rulesets)).ToArray();
+                   {
+                       liveColumn,
+                       cognitionColumn,
+                       accColumn,
+                       staminaColumn,
+                       speedColumn,
+                       precisionColumn,
+                       aimControlColumn,
+                       aimColumn
+                   }
+                   .Concat(base.CreateRightInfoContainerContent(rulesets))
+                   .ToArray();
         }
 
         protected override Drawable CreatePerformanceInfo()

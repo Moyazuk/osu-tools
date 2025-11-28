@@ -619,45 +619,113 @@ namespace PerformanceCalculatorGUI.Screens.Profile
             return base.OnKeyDown(e);
         }
 
-        private void updateSorting(ProfileSortCriteria sortCriteria)
-        {
-            if (!scores.Children.Any())
-                return;
+private void updateSorting(ProfileSortCriteria sortCriteria)
+{
+    if (!scores.Children.Any())
+        return;
 
-            if (profileImportTypeDropdown.Current.Value == ProfileCalculationType.Realm)
-                return;
+    if (profileImportTypeDropdown.Current.Value == ProfileCalculationType.Realm)
+        return;
 
-            DrawableProfileScore[] sortedScores;
+    DrawableProfileScore[] sortedScores;
 
-            switch (sortCriteria)
-            {
-                case ProfileSortCriteria.Live:
-                    sortedScores = scores.Children.OrderByDescending(x => ((ExtendedProfileScore)x.Score).LivePP).ToArray();
-                    break;
+    switch (sortCriteria)
+    {
+        case ProfileSortCriteria.Live:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).LivePP ?? 0)
+                .ToArray();
+            break;
 
-                case ProfileSortCriteria.Local:
-                    sortedScores = scores.Children.OrderByDescending(x => x.Score.PerformanceAttributes.Total).ToArray();
-                    break;
+        case ProfileSortCriteria.Local:
+            sortedScores = scores.Children
+                .OrderByDescending(x => x.Score.PerformanceAttributes.Total)
+                .ToArray();
+            break;
 
-                case ProfileSortCriteria.Difference:
-                    sortedScores = scores.Children.OrderByDescending(x => x.Score.PerformanceAttributes.Total - ((ExtendedProfileScore)x.Score).LivePP).ToArray();
-                    break;
+        case ProfileSortCriteria.Difference:
+            sortedScores = scores.Children
+                .OrderByDescending(x =>
+                {
+                    var ext = (ExtendedProfileScore)x.Score;
+                    return x.Score.PerformanceAttributes.Total - (ext.LivePP ?? 0);
+                })
+                .ToArray();
+            break;
 
-                case ProfileSortCriteria.Percentage:
-                    sortedScores = scores.Children.OrderByDescending(x => x.Score.PerformanceAttributes.Total / ((ExtendedProfileScore)x.Score).LivePP).ToArray();
-                    break;
+        case ProfileSortCriteria.Percentage:
+            sortedScores = scores.Children
+                .OrderByDescending(x =>
+                {
+                    var ext = (ExtendedProfileScore)x.Score;
+                    double? live = ext.LivePP;
 
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(sortCriteria), sortCriteria, null);
-            }
+                    if (!live.HasValue || live.Value <= 0)
+                        return double.NegativeInfinity;
 
-            DifferenceMode differenceMode = sortCriteria.GetDifferenceMode();
+                    return x.Score.PerformanceAttributes.Total / live.Value;
+                })
+                .ToArray();
+            break;
 
-            for (int i = 0; i < sortedScores.Length; i++)
-            {
-                scores.SetLayoutPosition(sortedScores[i], i);
-                ((DrawableExtendedProfileScore)sortedScores[i]).DifferenceMode = differenceMode;
-            }
-        }
+        // NEW: component PP sorts
+        case ProfileSortCriteria.Aim:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).AimPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.AimControl:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).AimControlPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.Precision:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).PrecisionPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.Speed:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).SpeedPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.Stamina:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).StaminaPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.Accuracy:
+            sortedScores = scores.Children
+                .OrderByDescending(x => ((ExtendedProfileScore)x.Score).AccPP)
+                .ToArray();
+            break;
+
+        case ProfileSortCriteria.Cognition:
+            sortedScores = scores.Children
+                .OrderByDescending(x =>
+                {
+                    var ext = (ExtendedProfileScore)x.Score;
+                    return ext.FlashlightPP + ext.ReadingPP;
+                })
+                .ToArray();
+            break;
+
+        default:
+            throw new ArgumentOutOfRangeException(nameof(sortCriteria), sortCriteria, null);
+    }
+
+    DifferenceMode differenceMode = sortCriteria.GetDifferenceMode();
+
+    for (int i = 0; i < sortedScores.Length; i++)
+    {
+        scores.SetLayoutPosition(sortedScores[i], i);
+        ((DrawableExtendedProfileScore)sortedScores[i]).DifferenceMode = differenceMode;
+    }
+}
     }
 }
